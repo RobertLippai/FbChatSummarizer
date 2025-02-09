@@ -88,7 +88,7 @@ Here are the currently available commands:
 
     async def handle_recap(self, args, thread_id, thread_type):
         """Handles the /recap command."""
-        parts = args.split(maxsplit=2)
+        parts = args.split(maxsplit=1)
         print(parts)
 
         if len(parts) < 2:

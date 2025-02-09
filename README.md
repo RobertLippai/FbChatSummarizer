@@ -12,43 +12,37 @@ A chatbot that summarizes Messenger group conversations using AI and stores rele
 - SQLAlchemy
 - [`openai`](https://github.com/openai/openai-python)
 - [`fbchat_muqit`](https://github.com/togashigreat/fbchat-muqit)
+- *Note: The `fbchat_muqit` library has a minor issue where fetched messages are concatenated. Until it's addressed, you can use [my fork](https://github.com/RobertLippai/fbchat-muqit) with a quick fix.*
 - Python 3.x
 
 
 ## Example usage  
-Start the bot by run the following command:  
-
-    python bot.py 
+Start the bot by run the following command:
+```sh
+  python bot.py 
+```
 It will begin listening for incoming messages.  
   
 ### 1. Add a group  
 You can add a group using the `/addGroup` command, in two ways:  
   
 **Add a different group**  
-If you want to add a group that is different from where you are  sending the command, you need to provide it's `thread_id`. It can be found by looking at the URL in your browser when you're in a Messenger chat:  
-    https://www.messenger.com/t/6161463540609695  
+If you want to add a group that is different from where you are  sending the command, you need to provide it's `thread_id`. It can be found by looking at the URL in your browser when you're in a Messenger chat: 
+`https://www.messenger.com/t/6161463540609695`  
 
 In this case, `6161463540609695` is the `thread_id` for the group.  
   
-The command would be:
-  
-    /addGroup "Group Name" 6161463540609695 
-
-  
+The command would be: `/addGroup "Group Name" 6161463540609695`
   
 **Add the current group**  
-If you want to add the group where the command is being sent,    you only need to provide the group name. The bot will use the current groups's thread_id.  
-  
-    /addGroup "Friends Chat"  
+If you want to add the group where the command is being sent, you only need to provide the group name. The bot will use the current groups's thread_id. 
+`/addGroup "Friends Chat"`
 
-  
+
 ### 2. Summarizing a conversation  
 To summarize the "Friends Chat" group from 12:00 to 14:00:  
 - First, use the `/listGroups` command to get the group index.  
-- Then, use the `/recap` command with the group index and time range:  
-  
-    /recap 1 12:00-14:00
-
+- Then, use the `/recap` command with the group index and time range: `/recap 1 12:00-14:00`
 
 ## Installation
 1. **Clone the repository:**
@@ -90,3 +84,4 @@ To summarize the "Friends Chat" group from 12:00 to 14:00:
 - Automatic Summarization: If a user misses a certain number of messages,
 the bot will automatically generate and send a recap of the missed conversation
 as soon as they open the group.
+- Different types of summary length: short, detailed, or bullet-point.

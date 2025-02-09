@@ -14,8 +14,7 @@ from time_parser import parse_time_range
 now = datetime.now()
 
 # TODO
-# Rename group command
-# /rename [GroupID] [NewName] – Renames a group.
+# Save, delete, update user in database
 class FbChatSummarizer(Client):
     """A Messenger chatbot that summarizes group conversations."""
 
@@ -27,10 +26,9 @@ class FbChatSummarizer(Client):
             return
 
         message_text = message_object.text.strip() # removes leading trailing whitespaces
-        parts = message_text.split(" ", 1)  # Split into command and arguments
+        parts = message_text.split(maxsplit=1)  # Split into command and arguments
         command = parts[0].lower()  # Extract the command (e.g., "/addgroup")
         args = parts[1] if len(parts) > 1 else ""  # Everything after the command
-
 
         if command == "/help" or command == "/h":
             help_message = """
@@ -39,6 +37,7 @@ Here are the currently available commands:
 /listGroups  - Lists all the available groups.
 /addGroup    - Adds a new group. Usage: /addGroup <group_name> [<group_id>]
 /deleteGroup - Deletes a group. Usage: /deleteGroup <group_name>
+/renameGroup - Renames a group. Usage: /renameGroup [<group_id>] <new_group_name>
 /recap       - Summarizes messages from a group. Usage: /recap <group_index> <time_range> (e.g., HH:MM, HH:MM-HH:MM, MM-DD, YYYY-MM-DD)
 /ping        - Checks if the bot is online.
 /help (/h)   - Displays this help message.
@@ -46,6 +45,7 @@ Here are the currently available commands:
             await self.sendMessage(help_message, thread_id, thread_type)
             return
 
+        # /ping – Checks if the bot is online.
         if command == "/ping":
             await self.sendMessage("Pong!", thread_id, thread_type)
             return
@@ -60,6 +60,11 @@ Here are the currently available commands:
 
         if command == "/addgroup":
             await self.add_group(args, thread_id, thread_type)
+            return
+
+        # /rename [GroupID] [NewName] – Renames a group.
+        if command == "/renamegroup":
+            await self.rename_group(args, thread_id, thread_type)
             return
 
         if command == "/deletegroup":
@@ -83,7 +88,7 @@ Here are the currently available commands:
 
     async def handle_recap(self, args, thread_id, thread_type):
         """Handles the /recap command."""
-        parts = args.split(" ", 2)
+        parts = args.split(maxsplit=2)
         print(parts)
 
         if len(parts) < 2:
@@ -127,14 +132,17 @@ Here are the currently available commands:
 
     async def add_group(self, args, thread_id, thread_type):
         """Adds a new group."""
-        message_content = args.strip().split(" ")
+        message_content = args.strip().split()
 
         group_name = message_content[0] if len(message_content) > 0 else None
         group_id = int(message_content[1]) if len(message_content) > 1 else thread_id
 
         # group name is mandatory
-        if group_id is None:
-            await self.sendMessage("A group name is required!", thread_id, thread_type)
+        if group_name is None:
+            #await self.sendMessage("A group name is required!", thread_id, thread_type)
+            await self.sendMessage(
+                "Usage: /addGroup <group_name> [<group_id>]\n- <group_name> is required.\n- <group_id> is optional (defaults to the current group).",
+                thread_id, thread_type)
             return
 
         result = db_manager.save_group_to_table(group_name, group_id)
@@ -144,24 +152,41 @@ Here are the currently available commands:
         else:
             await self.sendMessage(f"Failed to save group '{group_name}'.", thread_id, thread_type)
 
-    async def delete_group(self, args, thread_id, thread_type):
-        """Deletes a group."""
-        # maybe this should take an index?
-        message_content = args.strip().split(" ")
+    async def rename_group(self, args, thread_id, thread_type):
+        """Renames a group."""
+        message_content = args.strip().split()
 
-        group_name = message_content[0] if len(message_content) > 0 else None
+        group_index = message_content[0] if len(message_content) > 0 else None
+        new_group_name = message_content[1] if len(message_content) > 1 else None
 
-        # group name is mandatory
-        if group_name is None:
-            await self.sendMessage("A group name is required!", thread_id, thread_type)
+        if group_index is None or new_group_name is None:
+            await self.sendMessage("Usage: /renameGroup <group_index> <new_group_name>", thread_id, thread_type)
             return
 
-        result = db_manager.delete_group_from_table(group_name)
+        result = db_manager.rename_group(group_index, new_group_name)
 
         if result:
-            await self.sendMessage(f"Group '{group_name}' has been deleted!", thread_id, thread_type)
+            await self.sendMessage(f"Group '{group_index}' has been renamed!", thread_id, thread_type)
         else:
-            await self.sendMessage(f"Failed to delete group '{group_name}'.", thread_id, thread_type)
+            await self.sendMessage(f"Failed to rename group '{group_index}'.", thread_id, thread_type)
+
+    async def delete_group(self, args, thread_id, thread_type):
+        """Deletes a group."""
+        message_content = args.strip().split()
+
+        group_index = message_content[0] if len(message_content) > 0 else None
+
+        # group index is mandatory
+        if group_index is None:
+            await self.sendMessage("Usage: /deleteGroup <group_index>", thread_id, thread_type)
+            return
+
+        result = db_manager.delete_group_from_table(group_index)
+
+        if result:
+            await self.sendMessage(f"Group '{group_index}' has been deleted!", thread_id, thread_type)
+        else:
+            await self.sendMessage(f"Failed to delete group '{group_index}'.", thread_id, thread_type)
 
 async def main():
     cookies_path = "../cookies.json"  # Replace with the path to your saved cookies
